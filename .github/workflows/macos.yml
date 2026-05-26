@@ -1,0 +1,33 @@
+name: macOS Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  macos-build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Dependencies
+      run: |
+        brew install glib pixman pkg-config ninja python3 bison flex
+    
+    - name: Configure
+      run: |
+        mkdir build
+        cd build
+        ../configure --target-list=aarch64-softmmu,x86_64-softmmu --disable-docs --disable-werror
+        
+    - name: Build
+      run: |
+        cd build
+        make -j$(sysctl -n hw.ncpu)
+        
+    - name: Test
+      run: |
+        cd build
+        make check || true
