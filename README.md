@@ -39,7 +39,7 @@ Create a resilient hypervisor substrate that enables reproducible distributed ex
 **Layered design**
 - **Core Runtime** — memory‑safe privilege and execution logic implemented in Rust; includes Stage‑2 MMU, VM exit handling, and deterministic time enforcement.  
 - **Device Layer** — modular device models and accelerator passthrough implemented in C++; integrates advanced virtual memory allocators for GPU and NPU workloads.  
-- **Orchestration Layer** — lifecycle APIs, cluster coordination, and simulation fabric implemented in Java; exposes primitives for composing distributed simulations.  
+- **Orchestration Layer** — lifecycle APIs, cluster coordination, and simulation fabric implemented in C#; exposes primitives for composing distributed simulations.  
 - **Control Plane** — CLI, telemetry, and AI scheduling prototypes implemented in Python; provides developer tooling and observability.  
 - **Transpilation Path** — long‑term plan to migrate core components into a higher‑level substrate via Deepcomet Forge for continuous optimization.
 
