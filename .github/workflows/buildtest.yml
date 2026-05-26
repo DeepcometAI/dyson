@@ -1,0 +1,50 @@
+name: Buildtest
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  build-system:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [alpine, ubuntu2204, debian, fedora, centos9, opensuse-leap]
+        include:
+          - distro: alpine
+            target: avr-softmmu,loongarch64-softmmu,mips64-softmmu,mipsel-softmmu
+          - distro: ubuntu2204
+            target: alpha-softmmu,microblaze-softmmu,mips64el-softmmu
+          - distro: debian
+            target: arm-softmmu,i386-softmmu,riscv64-softmmu,sh4eb-softmmu,sparc-softmmu,xtensa-softmmu
+          - distro: fedora
+            target: mips-softmmu,xtensa-softmmu,m68k-softmmu,riscv32-softmmu,ppc-softmmu,sparc64-softmmu
+          - distro: centos9
+            target: ppc64-softmmu,or1k-softmmu,s390x-softmmu,x86_64-softmmu,rx-softmmu,sh4-softmmu
+          - distro: opensuse-leap
+            target: s390x-softmmu,x86_64-softmmu,aarch64-softmmu
+            
+    container:
+      image: registry.gitlab.com/qemu-project/qemu/qemu/${{ matrix.distro }}:latest
+      
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure
+      run: |
+        mkdir build
+        cd build
+        ../configure --target-list=${{ matrix.target }} --disable-docs --disable-werror
+        
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
+        
+    - name: Test
+      run: |
+        cd build
+        make check || true

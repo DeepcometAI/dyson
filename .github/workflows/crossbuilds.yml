@@ -1,0 +1,41 @@
+name: Cross Builds
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  cross-system:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, ppc64el, riscv64, s390x]
+        include:
+          - arch: arm64
+            target: aarch64-softmmu
+          - arch: ppc64el
+            target: ppc64-softmmu
+          - arch: riscv64
+            target: riscv64-softmmu
+          - arch: s390x
+            target: s390x-softmmu
+            
+    container:
+      image: registry.gitlab.com/qemu-project/qemu/qemu/debian-${{ matrix.arch }}-cross:latest
+      
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure
+      run: |
+        mkdir build
+        cd build
+        ../configure --target-list=${{ matrix.target }} --disable-docs --disable-werror
+        
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
