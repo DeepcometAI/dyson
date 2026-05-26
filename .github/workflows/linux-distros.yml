@@ -1,0 +1,45 @@
+name: Linux Distros Build
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [alpine, fedora, centos]
+        include:
+          - distro: alpine
+            image: alpine:latest
+            install: apk add --no-cache gcc g++ make ninja python3 glib-dev pixman-dev pkgconf flex bison bash perl git
+          - distro: fedora
+            image: fedora:latest
+            install: dnf install -y gcc gcc-c++ make ninja-build python3 glib2-devel pixman-devel pkgconf flex bison perl git
+          - distro: centos
+            image: quay.io/centos/centos:stream9
+            install: dnf install -y gcc gcc-c++ make ninja-build python3 glib2-devel pixman-devel pkgconf flex bison perl git
+            
+    container:
+      image: ${{ matrix.image }}
+      
+    steps:
+    - name: Install Dependencies
+      run: ${{ matrix.install }}
+      
+    - uses: actions/checkout@v4
+    
+    - name: Configure
+      run: |
+        mkdir build
+        cd build
+        ../configure --target-list=x86_64-softmmu --disable-docs --disable-werror
+        
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)

@@ -1,0 +1,52 @@
+name: Cross Builds
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  cross-build:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [aarch64, ppc64el, riscv64, s390x]
+        include:
+          - arch: aarch64
+            target: aarch64-softmmu
+            cross_prefix: aarch64-linux-gnu-
+            pkg: gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+          - arch: ppc64el
+            target: ppc64-softmmu
+            cross_prefix: powerpc64le-linux-gnu-
+            pkg: gcc-powerpc64le-linux-gnu libc6-dev-ppc64el-cross
+          - arch: riscv64
+            target: riscv64-softmmu
+            cross_prefix: riscv64-linux-gnu-
+            pkg: gcc-riscv64-linux-gnu libc6-dev-riscv64-cross
+          - arch: s390x
+            target: s390x-softmmu
+            cross_prefix: s390x-linux-gnu-
+            pkg: gcc-s390x-linux-gnu libc6-dev-s390x-cross
+            
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ninja-build python3 python3-pip libglib2.0-dev libpixman-1-dev pkg-config flex bison
+        sudo apt-get install -y ${{ matrix.pkg }}
+    
+    - name: Configure
+      run: |
+        mkdir build
+        cd build
+        ../configure --target-list=${{ matrix.target }} --cross-prefix=${{ matrix.cross_prefix }} --disable-docs --disable-werror
+        
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
