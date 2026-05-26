@@ -140,7 +140,7 @@ git push origin --tags
 **Code quality**
 - **Rust** — `cargo fmt`, `clippy`, unit tests.  
 - **C++** — modern C++ standards, static analysis, sanitizers.  
-- **Java** — API contracts and integration tests.  
+- **C#** — API contracts and integration tests.  
 - **Python** — linting, type hints, and test coverage.
 
 **Testing matrix**
