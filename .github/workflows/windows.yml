@@ -47,3 +47,44 @@ jobs:
       run: |
         cd build
         make check || true
+  msys2-arm64:
+    name: MSYS2 (ARM64)
+    runs-on: windows-11-arm
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup MSYS2 (ARM64)
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          bison diffutils flex git grep make sed
+          mingw-w64-aarch64-binutils mingw-w64-aarch64-ca-certificates
+          mingw-w64-aarch64-ccache mingw-w64-aarch64-curl-winssl
+          mingw-w64-aarch64-gcc mingw-w64-aarch64-glib2
+          mingw-w64-aarch64-libnfs mingw-w64-aarch64-libssh
+          mingw-w64-aarch64-ninja mingw-w64-aarch64-pixman
+          mingw-w64-aarch64-pkgconf mingw-w64-aarch64-python
+          mingw-w64-aarch64-python-certifi
+          mingw-w64-aarch64-python-setuptools
+          mingw-w64-aarch64-python-wheel mingw-w64-aarch64-zstd
+
+    - name: Configure (ARM64)
+      shell: msys2 {0}
+      run: |
+        mkdir build
+        cd build
+        ../configure --disable-system --enable-tools -Ddebug=false -Doptimization=0 --disable-werror
+
+    - name: Build (ARM64)
+      shell: msys2 {0}
+      run: |
+        cd build
+        make -j$(nproc)
+
+    - name: Test (ARM64)
+      shell: msys2 {0}
+      run: |
+        cd build
+        make check || true
