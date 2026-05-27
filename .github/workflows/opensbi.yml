@@ -1,0 +1,38 @@
+name: OpenSBI Build
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  build-opensbi:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+        
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-riscv64-linux-gnu make
+        
+    - name: Build OpenSBI (32-bit)
+      run: |
+        make -j$(nproc) -C roms/opensbi clean
+        make -j$(nproc) -C roms opensbi32-generic
+        
+    - name: Build OpenSBI (64-bit)
+      run: |
+        make -j$(nproc) -C roms/opensbi clean
+        make -j$(nproc) -C roms opensbi64-generic
+        
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: opensbi-firmware
+        path: |
+          pc-bios/opensbi-riscv32-generic-fw_dynamic.bin
+          pc-bios/opensbi-riscv64-generic-fw_dynamic.bin
