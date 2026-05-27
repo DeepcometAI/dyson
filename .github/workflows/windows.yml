@@ -69,8 +69,25 @@ jobs:
           mingw-w64-clang-aarch64-python-setuptools mingw-w64-clang-aarch64-python-wheel
           mingw-w64-clang-aarch64-zstd
 
+    - name: Diagnose toolchain (ARM64)
+      shell: msys2 {0}
+      run: |
+        echo "--- PATH ---"
+        echo $PATH
+        echo "--- /mingw64/bin listing (first 200 lines) ---"
+        ls -la /mingw64/bin | sed -n '1,200p' || true
+        echo "--- which outputs ---"
+        which cc || true
+        which gcc || true
+        which clang || true
+        echo "--- pacman packages (aarch64) ---"
+        pacman -Qs mingw-w64-clang-aarch64 || true
+
     - name: Configure (ARM64)
       shell: msys2 {0}
+      env:
+        CC: gcc
+        CXX: g++
       run: |
         mkdir build
         cd build
