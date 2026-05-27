@@ -48,7 +48,7 @@ jobs:
         cd build
         make check || true
   msys2-arm64:
-    name: MSYS2 (ARM64)
+    name: msys2-arm64
     runs-on: windows-11-arm
     steps:
     - uses: actions/checkout@v4
@@ -56,6 +56,7 @@ jobs:
     - name: Setup MSYS2 (ARM64)
       uses: msys2/setup-msys2@v2
       with:
+        arch: aarch64
         msystem: MINGW64
         update: true
         install: >-
