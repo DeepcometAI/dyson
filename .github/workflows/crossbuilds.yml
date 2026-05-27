@@ -2,40 +2,101 @@ name: Cross Builds
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [master, develop]
   pull_request:
-    branches: [ master, develop ]
+    branches: [master, develop]
 
 jobs:
   cross-system:
+    name: cross-${{ matrix.arch }}-system
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        arch: [arm64, ppc64el, riscv64, s390x]
         include:
           - arch: arm64
-            target: aarch64-softmmu
+            image: debian-arm64-cross
+            extra_configure_opts: ""
+            cross_skip_targets: ""
           - arch: ppc64el
-            target: ppc64-softmmu
+            image: debian-ppc64el-cross
+            extra_configure_opts: ""
+            cross_skip_targets: ""
           - arch: riscv64
-            target: riscv64-softmmu
+            image: debian-riscv64-cross
+            extra_configure_opts: ""
+            cross_skip_targets: ""
           - arch: s390x
-            target: s390x-softmmu
-            
+            image: debian-s390x-cross
+            extra_configure_opts: ""
+            cross_skip_targets: ""
+          - arch: win64
+            image: fedora-win64-cross
+            extra_configure_opts: --enable-fdt=internal --disable-plugins
+            cross_skip_targets: >-
+              alpha-softmmu avr-softmmu hppa-softmmu
+              m68k-softmmu microblaze-softmmu
+              or1k-softmmu rx-softmmu sh4eb-softmmu sparc64-softmmu
+              tricore-softmmu xtensaeb-softmmu
+
     container:
-      image: registry.gitlab.com/qemu-project/qemu/qemu/debian-${{ matrix.arch }}-cross:latest
-      
+      image: registry.gitlab.com/qemu-project/qemu/qemu/${{ matrix.image }}:latest
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Configure
-      run: |
-        mkdir build
-        cd build
-        ../configure --target-list=${{ matrix.target }} --disable-docs --disable-werror
-        
-    - name: Build
-      run: |
-        cd build
-        make -j$(nproc)
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: |
+          export CCACHE_BASEDIR="$(pwd)"
+          export CCACHE_DIR="$CCACHE_BASEDIR/ccache"
+          export CCACHE_MAXSIZE="500M"
+          mkdir build
+          cd build
+          ../configure --disable-werror --disable-docs --enable-fdt=system \
+            --disable-user $QEMU_CONFIGURE_OPTS ${{ matrix.extra_configure_opts }} \
+            --target-list-exclude="arm-softmmu \
+              i386-softmmu microblaze-softmmu mips-softmmu mipsel-softmmu \
+              mips64-softmmu ppc-softmmu riscv32-softmmu sh4-softmmu \
+              sparc-softmmu xtensa-softmmu ${{ matrix.cross_skip_targets }}"
+
+      - name: Build
+        run: |
+          cd build
+          make -j"$(nproc)" all check-build
+
+  cross-user:
+    name: cross-${{ matrix.arch }}-user
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            image: debian-arm64-cross
+          - arch: ppc64el
+            image: debian-ppc64el-cross
+          - arch: riscv64
+            image: debian-riscv64-cross
+          - arch: s390x
+            image: debian-s390x-cross
+
+    container:
+      image: registry.gitlab.com/qemu-project/qemu/qemu/${{ matrix.image }}:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          ../configure --disable-werror --disable-docs $QEMU_CONFIGURE_OPTS \
+            --disable-system --target-list-exclude="aarch64_be-linux-user \
+              alpha-linux-user m68k-linux-user microblazeel-linux-user \
+              or1k-linux-user ppc-linux-user sparc-linux-user \
+              xtensa-linux-user ${{ matrix.cross_skip_targets }}"
+
+      - name: Build
+        run: |
+          cd build
+          make -j"$(nproc)" all check-build
