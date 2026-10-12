@@ -86,7 +86,9 @@ jobs:
       run: |
         mkdir build
         cd build
-        ../configure --cc=clang --cxx=clang++ --disable-system --enable-tools -Ddebug=false -Doptimization=0 --disable-werror
+        # qemu-ga (guest agent) needs GNU windmc, which the CLANGARM64 llvm
+        # toolchain does not provide. It is not needed for this tools build.
+        ../configure --cc=clang --cxx=clang++ --disable-system --enable-tools --disable-guest-agent -Ddebug=false -Doptimization=0 --disable-werror
 
     - name: Build (ARM64)
       shell: msys2 {0}
