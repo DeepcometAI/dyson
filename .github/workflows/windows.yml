@@ -53,45 +53,40 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # MSYS2 has no GCC for ARM64 Windows; the native toolchain is clang in the
+    # CLANGARM64 environment (/clangarm64). The packages below install into
+    # /clangarm64, so the shell must be CLANGARM64 too. With MINGW64 the PATH
+    # points at /mingw64/bin and none of these tools are found.
     - name: Setup MSYS2 (ARM64)
       uses: msys2/setup-msys2@v2
       with:
-        msystem: MINGW64
+        msystem: CLANGARM64
         update: true
         install: >-
           bison diffutils flex git grep make sed
-          mingw-w64-clang-aarch64-binutils mingw-w64-clang-aarch64-ccache
-          mingw-w64-clang-aarch64-curl-winssl mingw-w64-clang-aarch64-gcc
-          mingw-w64-clang-aarch64-glib2 mingw-w64-clang-aarch64-libnfs
-          mingw-w64-clang-aarch64-libssh mingw-w64-clang-aarch64-ninja
-          mingw-w64-clang-aarch64-pixman mingw-w64-clang-aarch64-pkgconf
-          mingw-w64-clang-aarch64-python mingw-w64-clang-aarch64-python-certifi
-          mingw-w64-clang-aarch64-python-setuptools mingw-w64-clang-aarch64-python-wheel
-          mingw-w64-clang-aarch64-zstd
+        pacboy: >-
+          toolchain:p llvm-tools:p ccache:p curl-winssl:p glib2:p libnfs:p
+          libssh:p ninja:p pixman:p pkgconf:p python:p python-certifi:p
+          python-setuptools:p python-wheel:p zstd:p
 
     - name: Diagnose toolchain (ARM64)
       shell: msys2 {0}
       run: |
-        echo "--- PATH ---"
-        echo $PATH
-        echo "--- /mingw64/bin listing (first 200 lines) ---"
-        ls -la /mingw64/bin | sed -n '1,200p' || true
-        echo "--- which outputs ---"
-        which cc || true
-        which gcc || true
-        which clang || true
-        echo "--- pacman packages (aarch64) ---"
-        pacman -Qs mingw-w64-clang-aarch64 || true
+        echo "MSYSTEM=$MSYSTEM"
+        echo "--- which ---"
+        which clang clang++ ninja python windres || true
+        clang --version
+        clang++ --version
 
     - name: Configure (ARM64)
       shell: msys2 {0}
       env:
-        CC: gcc
-        CXX: g++
+        CC: clang
+        CXX: clang++
       run: |
         mkdir build
         cd build
-        ../configure --disable-system --enable-tools -Ddebug=false -Doptimization=0 --disable-werror
+        ../configure --cc=clang --cxx=clang++ --disable-system --enable-tools -Ddebug=false -Doptimization=0 --disable-werror
 
     - name: Build (ARM64)
       shell: msys2 {0}
